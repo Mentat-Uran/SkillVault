@@ -16,6 +16,7 @@ import {
 } from "@/server/services/github-import-service";
 import { getCuratedExampleContent, getCuratedExamples } from "@/lib/curated";
 import {
+  MAX_GITHUB_REPO_IMPORT_FILE_COUNT,
   previewGitHubRepoImport,
   importGitHubRepoAssets,
 } from "@/server/services/github-repo-import-service";
@@ -42,7 +43,7 @@ const githubRepoPreviewSchema = z.object({
 const githubRepoImportSchema = z.object({
   url: z.string().url().max(2000),
   ref: z.string().max(255).optional(),
-  selectedFiles: z.array(z.string().min(1).max(500)).min(1).max(100),
+  selectedFiles: z.array(z.string().min(1).max(500)).min(1).max(MAX_GITHUB_REPO_IMPORT_FILE_COUNT),
   strategy: z.enum(["overwrite", "copy", "cancel"]),
 });
 

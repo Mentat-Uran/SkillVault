@@ -7,7 +7,7 @@ import type { ImportConflictStrategy } from "@/lib/constants";
 import type { ValidationResult } from "@/lib/validation";
 import type { MarkdownFrontmatter } from "@/lib/markdown";
 
-const MAX_FILE_COUNT = 50;
+export const MAX_GITHUB_REPO_IMPORT_FILE_COUNT = 50;
 const MAX_FILE_BYTES = 1024 * 1024;
 const MAX_ARCHIVE_BYTES = 10 * 1024 * 1024;
 
@@ -163,8 +163,8 @@ export async function previewGitHubRepoImport(
     : allMdFiles;
 
   const filteredOut = allMdFiles.length - filtered.length;
-  const truncated = filtered.length > MAX_FILE_COUNT;
-  const limited = filtered.slice(0, MAX_FILE_COUNT);
+  const truncated = filtered.length > MAX_GITHUB_REPO_IMPORT_FILE_COUNT;
+  const limited = filtered.slice(0, MAX_GITHUB_REPO_IMPORT_FILE_COUNT);
 
   const files: RepoFilePreview[] = [];
 
@@ -226,6 +226,14 @@ export async function importGitHubRepoAssets(
   selectedFiles: string[],
   strategy: ImportConflictStrategy,
 ): Promise<RepoImportResult> {
+  if (selectedFiles.length > MAX_GITHUB_REPO_IMPORT_FILE_COUNT) {
+    const error = `仓库导入最多支持 ${MAX_GITHUB_REPO_IMPORT_FILE_COUNT} 个文件`;
+    return {
+      imported: [],
+      errors: selectedFiles.map((filePath) => ({ filePath, error })),
+    };
+  }
+
   const source = parseGitHubRepoUrl(url, ref);
   const buffer = await fetchRepoArchive(source.archiveUrl);
 
@@ -245,7 +253,18 @@ export async function importGitHubRepoAssets(
 
   for (const entry of matchedEntries) {
     const filePath = stripRepoPrefix(entry.entryName);
-    const rawContent = entry.getData().toString("utf-8");
+    if (entry.header.size > MAX_FILE_BYTES) {
+      errors.push({ filePath, error: "文件超过 1 MB 限制" });
+      continue;
+    }
+
+    const rawBytes = entry.getData();
+    if (rawBytes.byteLength > MAX_FILE_BYTES) {
+      errors.push({ filePath, error: "文件超过 1 MB 限制" });
+      continue;
+    }
+
+    const rawContent = rawBytes.toString("utf-8");
     const sourceChecksum = createContentHash(rawContent);
 
     try {
