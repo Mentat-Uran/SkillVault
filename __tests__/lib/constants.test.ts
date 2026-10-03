@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import packageJson from "../../package.json";
 import { APP_VERSION, ASSET_TYPES, TARGET_TOOLS, EXPORT_PRESETS, ASSET_STATUSES, VISIBILITIES, ASSET_SOURCES } from "@/lib/constants";
 
 describe("constants", () => {
@@ -6,8 +7,8 @@ describe("constants", () => {
     expect(APP_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it("APP_VERSION is 1.1.0", () => {
-    expect(APP_VERSION).toBe("1.1.0");
+  it("APP_VERSION matches the package version", () => {
+    expect(APP_VERSION).toBe(packageJson.version);
   });
 
   it("ASSET_TYPES contains expected values", () => {
